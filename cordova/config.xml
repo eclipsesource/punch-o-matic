@@ -12,5 +12,6 @@
   </author>
   <access origin="*" />
 
+  <gap:plugin name="org.apache.cordova.device-motion" />
   <preference name="EnableDeveloperConsole" value="true"/>
 </widget>
