@@ -3,7 +3,11 @@ var accelerometer;
 var dots = 500;
 var highScore = 0;
 var ctx;
+var ctx2;
 var currentChart;
+var lineChart;
+var xValues = [];
+var yValues = [];
 
 var chartOptions = { animation: false,
                      showScale: true,
@@ -26,32 +30,112 @@ var data= [ { value: 0,
               highlight: "#616774",
               label: "Dark Grey" } ];
 
+var lineData = {
+  labels: initArray("", dots),
+  datasets: [
+    {
+      label: "x",
+      fillColor: "rgba(222,22,22,0.2)",
+      strokeColor: "rgba(222,22,22,1)",
+      pointColor: "rgba(222,22,22,1)",
+      pointStrokeColor: "#888",
+      pointHighlightFill: "#888",
+      pointHighlightStroke: "rgba(222,22,22,1)",
+      data: initArray(0, dots)
+    },
+    {
+      label: "y",
+      fillColor: "rgba(22,187,22,0.2)",
+      strokeColor: "rgba(22,222,22,1)",
+      pointColor: "rgba(22,187,22,1)",
+      pointStrokeColor: "#fff",
+      pointHighlightFill: "#fff",
+      pointHighlightStroke: "rgba(22,187,22,1)",
+      data: initArray(0, dots)
+    }
+  ]
+};
+
 createPage("Doughnut", data).open();
+
+function initArray(val, size) {
+  var result = [];
+  for(var i=0; i<size; i++) {
+    result.push(val);
+  }
+  return result;
+}
 
 function createPage(chartType, chartData) {
   var page = tabris.create("Page", {
     title: "Box-O-Matic",
-    topLevel: true
+    topLevel: true,
+    style: ["FULLSCREEN"]
   });
 
-  var currentScoreLabel = tabris.create("TextView", {
-    layoutData: {top: 0, right: 0, width: 200, height: 80},
-    background: "#555555",
+  var tabFolder = tabris.create("TabFolder", {
+    layoutData: {left: 0, top: 0, right: 0, bottom: 0},
+    tabBarLocation: "top",
+    background: "#393939",
     textColor: "white",
+    paging: true
+  }).appendTo(page)
+  .on("change:selection", function(widget, selection) {
+      if(selection.get("title") === "Acceleration") {
+        for(var i=0; i<Math.min(xValues.length,500); i++) {
+          lineChart.datasets[0].points[i].value = xValues[i];
+          lineChart.datasets[1].points[i].value = yValues[i];
+        }
+        lineChart.update();
+      }
+  });
+
+  var tab1 = tabris.create("Tab", {
+    title: "Box-O-Matic"
+  }).appendTo(tabFolder);
+
+  var tab2 = tabris.create("Tab", {
+    title: "Acceleration"
+  }).appendTo(tabFolder);
+
+  var canvas2 = tabris.create("Canvas", {
+    layoutData: {left: 10, top: 10, right: 0, bottom: 0},
+    background: "#393939"
+  }).appendTo(tab2).on("resize", function(canvas, bounds) {
+    ctx2 = createCanvasContext(canvas2, bounds);
+    ctx2.scale(1 / window.devicePixelRatio, 1 / window.devicePixelRatio);
+    lineChart = new Chart(ctx2)["Line"](lineData, chartOptions);
+  });
+
+  var canvas = tabris.create("Canvas", {
+    layoutData: {left: 10, top: 10, right: 200, bottom: 0},
+    background: "#393939"
+  }).appendTo(tab1).on("resize", function(canvas, bounds) {
+     ctx = createCanvasContext(canvas, bounds);
+     ctx.scale(1 / window.devicePixelRatio, 1 / window.devicePixelRatio);
+     currentChart = new Chart(ctx)[chartType](chartData, chartOptions);
+  });
+
+
+  var currentScoreLabel = tabris.create("TextView", {
+    layoutData: {top: 0, right: 20, width: 200, height: 80},
+    background: "#393939",
+    textColor: "white",
+    alignment: "left",
     font: "20px",
-    text: "0"
-  }).appendTo(page);
+    text: "Score: 0"
+  }).appendTo(tab1);
 
   var highScoreLabel= tabris.create("TextView", {
-    layoutData: {top: 80, right: 0, width: 200, height: 80},
+    layoutData: {top: 80, right: 20, width: 200, height: 80},
     background: "#393939",
     textColor: "white",
     font: "20px",
     text: "0"
-  }).appendTo(page);
+  }).appendTo(tab1);
 
   var restartButton = tabris.create("Button", {
-    layoutData: {bottom: 0, right: 0, width: 200, height: 80},
+    layoutData: {bottom: 20, right: 20, width: 250, height: 80},
     background: "#555555",
     textColor: "white",
     font: "28px",
@@ -60,23 +144,16 @@ function createPage(chartType, chartData) {
     if(!accelerometer) {
       currentScoreLabel.set("text", "Score: " + 0.00);
       restartButton.set("text", "Get Ready...");
-      ctx = createCanvasContext(canvas.get("bounds"));
+      ctx = createCanvasContext(canvas, canvas.get("bounds"));
       ctx.scale(1 / window.devicePixelRatio, 1 / window.devicePixelRatio);
       currentChart = new Chart(ctx)[chartType](data, chartOptions );
+      xValues = [];
+      yValues = [];
       setTimeout(start, 5000);
     }
-  }).appendTo(page);
+  }).appendTo(tab1);
 
-  var canvas = tabris.create("Canvas", {
-    layoutData: {left: 0, top: 0, right: 200, bottom: 0},
-    background: "white"
-  }).appendTo(page).on("resize", function(canvas, bounds) {
-     ctx = createCanvasContext(bounds);
-     ctx.scale(1 / window.devicePixelRatio, 1 / window.devicePixelRatio);
-     currentChart = new Chart(ctx)[chartType](chartData, chartOptions);
-  });
-
-  var createCanvasContext = function(bounds) {
+  var createCanvasContext = function(canvas, bounds) {
     var width = bounds.width;
     var height = Math.min(bounds.height, width);
     return canvas.getContext("2d", width, height);
@@ -130,6 +207,9 @@ function createPage(chartType, chartData) {
     }
     lastX = x;
 
+    xValues.push(x);
+    yValues.push(largestMax);
+
     if(counter===dots-1) {
       finish();
     } else {
@@ -142,7 +222,7 @@ function createPage(chartType, chartData) {
   };
 
   var finish = function() {
-      currentScoreLabel.set("background", "#555555");
+      currentScoreLabel.set("background", "#393939");
       restartButton.set("text", "Start");
       currentChart.update();
       if ( currentScore > highScore ) {
@@ -172,4 +252,3 @@ function createPage(chartType, chartData) {
   setTimeout(start , 5000);
   return page;
 }
-
