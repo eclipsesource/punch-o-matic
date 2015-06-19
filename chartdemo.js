@@ -118,27 +118,27 @@ function createPage(chartType, chartData) {
 
 
   var currentScoreLabel = tabris.create("TextView", {
-    layoutData: {top: 0, right: 20, width: 200, height: 80},
+    layoutData: {top: 0, right: 20, width: 220, height: 60},
     background: "#393939",
     textColor: "white",
     alignment: "left",
-    font: "20px",
+    font: "24px",
     text: "Score: 0"
   }).appendTo(tab1);
 
   var highScoreLabel= tabris.create("TextView", {
-    layoutData: {top: 80, right: 20, width: 200, height: 80},
+    layoutData: {top: 80, right: 20, width: 220, height: 60},
     background: "#393939",
     textColor: "white",
-    font: "20px",
+    font: "24px",
     text: "0"
   }).appendTo(tab1);
 
   var restartButton = tabris.create("Button", {
-    layoutData: {bottom: 20, right: 20, width: 250, height: 80},
+    layoutData: {bottom: 20, right: 20, width: 220, height: 60},
     background: "#555555",
     textColor: "white",
-    font: "28px",
+    font: "24px",
     text: "Get Ready...",
   }).on("tap", function() {
     if(!accelerometer) {
